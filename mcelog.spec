@@ -4,13 +4,14 @@
 #
 Name     : mcelog
 Version  : 129
-Release  : 2
+Release  : 3
 URL      : https://github.com/andikleen/mcelog/archive/v129.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v129.tar.gz
 Summary  : No detailed summary available
 Group    : Development/Tools
 License  : GPL-2.0
 Requires: mcelog-bin
+Requires: mcelog-config
 Requires: mcelog-doc
 
 %description
@@ -24,9 +25,18 @@ mcelog also handles corrected errors, by logging and accounting them.
 %package bin
 Summary: bin components for the mcelog package.
 Group: Binaries
+Requires: mcelog-config
 
 %description bin
 bin components for the mcelog package.
+
+
+%package config
+Summary: config components for the mcelog package.
+Group: Default
+
+%description config
+config components for the mcelog package.
 
 
 %package doc
@@ -46,6 +56,11 @@ make V=1  %{?_smp_mflags}
 %install
 rm -rf %{buildroot}
 %make_install
+## make_install_append content
+mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+cp mcelog.service %{buildroot}/usr/lib/systemd/system
+ln -s ../mcelog.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+## make_install_append end
 
 %files
 %defattr(-,root,root,-)
@@ -53,6 +68,11 @@ rm -rf %{buildroot}
 %files bin
 %defattr(-,root,root,-)
 /usr/bin/mcelog
+
+%files config
+%defattr(-,root,root,-)
+/usr/lib/systemd/system/mcelog.service
+/usr/lib/systemd/system/multi-user.target.wants/mcelog.service
 
 %files doc
 %defattr(-,root,root,-)

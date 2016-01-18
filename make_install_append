@@ -1,0 +1,3 @@
+mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+cp mcelog.service %{buildroot}/usr/lib/systemd/system
+ln -s ../mcelog.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
