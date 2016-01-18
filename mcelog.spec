@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 129
-Release  : 1
+Release  : 2
 URL      : https://github.com/andikleen/mcelog/archive/v129.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v129.tar.gz
 Summary  : No detailed summary available
