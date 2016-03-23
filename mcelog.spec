@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 134
-Release  : 5
+Release  : 6
 URL      : https://github.com/andikleen/mcelog/archive/v134.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v134.tar.gz
 Summary  : No detailed summary available
