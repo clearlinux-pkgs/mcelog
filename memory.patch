@@ -1,0 +1,20 @@
+--- mcelog-136/eventloop.c~	2016-04-15 20:19:32.000000000 +0000
++++ mcelog-136/eventloop.c	2016-04-18 17:43:37.272671307 +0000
+@@ -22,6 +22,7 @@
+ #include <string.h>
+ #include <sys/fcntl.h>
+ #include <signal.h>
++#include <malloc.h>
+ #include "mcelog.h"
+ #include "eventloop.h"
+ 
+@@ -135,7 +136,8 @@
+ 	if (!ppoll_vec) 
+ 		ppoll_vec = ppoll_fallback;
+ 
+-	for (;;) { 
++	for (;;) {
++		malloc_trim(0); 
+ 		int n = ppoll_vec(pollfds, max_pollfd, NULL, &event_sigs);
+ 		if (n <= 0) {
+ 			if (n < 0 && errno != EINTR)

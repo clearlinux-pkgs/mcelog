@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 136
-Release  : 8
+Release  : 9
 URL      : https://github.com/andikleen/mcelog/archive/v136.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v136.tar.gz
 Summary  : No detailed summary available
@@ -13,6 +13,7 @@ License  : GPL-2.0
 Requires: mcelog-bin
 Requires: mcelog-config
 Requires: mcelog-doc
+Patch1: memory.patch
 
 %description
 mcelog is the user space backend for logging machine check errors
@@ -49,6 +50,7 @@ doc components for the mcelog package.
 
 %prep
 %setup -q -n mcelog-136
+%patch1 -p1
 
 %build
 make V=1  %{?_smp_mflags}
