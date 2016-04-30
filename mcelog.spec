@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 136
-Release  : 10
+Release  : 11
 URL      : https://github.com/andikleen/mcelog/archive/v136.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v136.tar.gz
 Summary  : No detailed summary available
