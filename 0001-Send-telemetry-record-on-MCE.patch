@@ -1,0 +1,447 @@
+From b59e3e273bafefc9a95d190eb12b944bd2047d27 Mon Sep 17 00:00:00 2001
+From: Matthew Johnson <matthew.johnson@intel.com>
+Date: Wed, 27 Jul 2016 16:41:01 +0000
+Subject: [PATCH mcelog v138] Send telemetry record on MCE
+
+If CLEAR_TELEM is defined at compile time, and libtelemetry exists
+at run time, telemetry records are enabled. When an MCE is detected,
+a telemetry record is sent to the telemetry server defined in the
+user's telemetrics configuration.
+
+mcelog continues to log in it's normal manner (syslog, logfile).
+
+Signed-off-by: Matthew Johnson <matthew.johnson@intel.com>
+---
+ Makefile        |   5 +-
+ mcelog.c        |  77 +++++++++++++++++++++++++
+ mcelog.h        |  10 ++++
+ msg.c           |  72 +++++++++++++++++++++++
+ telem_records.c | 174 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 336 insertions(+), 2 deletions(-)
+ create mode 100644 telem_records.c
+
+diff --git a/Makefile b/Makefile
+index 4e663bb..8e5ffbc 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,4 +1,5 @@
+-CFLAGS := -g -Os
++CFLAGS := -g -Os -DCLEAR_TELEM
++LDLIBS := -ldl
+ prefix := /usr
+ etcprefix :=
+ MANDIR := ${prefix}/share/man
+@@ -38,7 +39,7 @@ OBJ := p4.o k8.o mcelog.o dmi.o tsc.o core2.o bitfield.o intel.o \
+        client.o cache.o sysfs.o yellow.o page.o rbtree.o 	 \
+        xeon75xx.o sandy-bridge.o ivy-bridge.o haswell.o		 \
+        broadwell_de.o broadwell_epex.o skylake_xeon.o		 \
+-       msr.o bus.o unknown.o
++       msr.o bus.o unknown.o telem_records.o
+ DISKDB_OBJ := diskdb.o dimm.o db.o
+ CLEAN := mcelog dmi tsc dbquery .depend .depend.X dbquery.o ${DISKDB_OBJ} \
+ 	version.o version.c version.tmp
+diff --git a/mcelog.c b/mcelog.c
+index 41ba1bc..bddb1db 100644
+--- a/mcelog.c
++++ b/mcelog.c
+@@ -87,6 +87,18 @@ static int debug_numerrors;
+ int imc_log = -1;
+ static int check_only = 0;
+ 
++#ifdef CLEAR_TELEM
++static char *recordfile = "/var/log/mcelog-telem";
++int have_telem = 0;
++
++static const char *arstate[4] = {
++	[0] = "UCNA",
++	[1] = "AR",
++	[2] = "SRAO",
++	[3] = "SRAR"
++};
++#endif /* CLEAR_TELEM */
++
+ static int is_cpu_supported(void);
+ 
+ 
+@@ -1232,6 +1244,15 @@ static void process(int fd, unsigned recordlen, unsigned loglen, char *buf)
+ 	int len, count;
+ 	int finish = 0, flags;
+ 
++#ifdef CLEAR_TELEM
++	int severity = 1;
++	char *class = NULL;
++	/* try to load telemetry api
++	 * if it fails, don't try to send a record
++	 */
++	have_telem = load_telem_api();
++#endif /* CLEAR_TELEM */
++
+ 	if (recordlen == 0) {
+ 		Wprintf("no data in mce record\n");
+ 		return;
+@@ -1253,6 +1274,18 @@ static void process(int fd, unsigned recordlen, unsigned loglen, char *buf)
+ 	for (i = 0; (i < count) && !finish; i++) {
+ 		struct mce *mce = (struct mce *)(buf + i*recordlen);
+ 		mce_prepare(mce);
++#ifdef CLEAR_TELEM
++		if (have_telem) {
++			/* open telemetry log file for writing */
++			if (open_telem_file(recordfile, "w") < 0) {
++				SYSERRprintf("Cannot open telemetry record file %s", recordfile);
++				if (!daemon_mode) {
++					exit(1);
++				}
++			}
++			severity = (mce->status & MCI_STATUS_UC) ? 4 : 2;
++		}
++#endif /* CLEAR_TELEM */
+ 		if (numerrors > 0 && --numerrors == 0)
+ 			finish = 1;
+ 		if (!mce_filter(mce, recordlen)) 
+@@ -1264,7 +1297,51 @@ static void process(int fd, unsigned recordlen, unsigned loglen, char *buf)
+ 		} else
+ 			dump_mce_raw_ascii(mce, recordlen);
+ 		flushlog();
++#ifdef CLEAR_TELEM
++		if (have_telem) {
++			/* close telemetry log file so send_record can reopen */
++			if (close_telem_file() != 0) {
++				SYSERRprintf("Cannot close telemetry record file %s", recordfile);
++				if (!daemon_mode) {
++					exit(1);
++				}
++			}
++
++			/* check proper status bits for type of error to set as
++			 * classification for payload:
++			 * corrected
++			 * SRAO - Software Recoverable Action Optional
++			 * SRAR - Software Recoverable Action Required
++			 * UCNA - Uncorrected No Action
++			 */
++			if (!(mce->status & MCI_STATUS_UC)) {
++				/* corrected error */
++				class = strdup("corrected");
++			} else if (mce->status & (MCI_STATUS_S|MCI_STATUS_AR)) {
++				/* uncorrected SRAO or SRAR */
++				class = strdup(arstate[(mce->status >> 55) & 3]);
++			} else {
++				/* uncorrected, but AR bit not set, UCNA */
++				class = strdup("UCNA");
++			}
++
++			/* do not print an error if the return is greater than 0
++			 * this means the user may have opted out
++			 */
++			if (send_record(severity, class, recordfile) < 0) {
++				SYSERRprintf("Error sending telemetry record");
++			}
++
++			free(class);
++		}
++#endif /* CLEAR_TELEM */
++	}
++#ifdef CLEAR_TELEM
++	if (have_telem) {
++		remove(recordfile);
++		unload_telem_api();
+ 	}
++#endif /* CLEAR_TELEM */
+ 
+ 	if (debug_numerrors && numerrors <= 0)
+ 		finish = 1;
+diff --git a/mcelog.h b/mcelog.h
+index abc8bc9..a119f18 100644
+--- a/mcelog.h
++++ b/mcelog.h
+@@ -156,3 +156,13 @@ extern enum cputype cputype;
+ extern int filter_memory_errors;
+ extern int imc_log;
+ extern void set_imc_log(int cputype);
++
++#ifdef CLEAR_TELEM
++#include <sys/stat.h>
++extern int send_record(int severity, char *class, char *payload_fn);
++extern int open_telem_file(const char *fn, char *mode);
++extern int close_telem_file(void);
++extern int load_telem_api(void);
++extern void unload_telem_api(void);
++extern int mkdir_p(const char *path, mode_t mode, char *cl);
++#endif /* CLEAR_TELEM */
+diff --git a/msg.c b/msg.c
+index dad33f2..dc4aea2 100644
+--- a/msg.c
++++ b/msg.c
+@@ -14,6 +14,10 @@ int syslog_level = LOG_WARNING;
+ static FILE *output_fh;
+ static char *output_fn;
+ 
++#ifdef CLEAR_TELEM
++static FILE *telem_fh;
++#endif /* CLEAR_TELEM */
++
+ int need_stdout(void)
+ {
+ 	return !output_fh && (syslog_opt == 0);
+@@ -135,6 +139,13 @@ int Wprintf(char *fmt, ...)
+ 		n = vfprintf(output_fh ? output_fh : stdout, fmt, ap);
+ 		va_end(ap);
+ 	}
++#ifdef CLEAR_TELEM
++	if (telem_fh) {
++		va_start(ap,fmt);
++		vfprintf(telem_fh, fmt, ap);
++		va_end(ap);
++	}
++#endif /* CLEAR_TELEM */
+ 	return n;
+ }
+ 
+@@ -169,3 +180,64 @@ void reopenlog(void)
+ 			SYSERRprintf("Cannot reopen logfile `%s'", output_fn);
+ 	}	
+ }
++
++#ifdef CLEAR_TELEM
++#include <sys/stat.h>
++#include <libgen.h>
++
++int mkdir_p(const char *path, mode_t mode, char *cl)
++{
++	char *cl_base = NULL;
++
++	if (!strcmp(path, ".") || !strcmp(path, "/") || !strcmp(path, "//") || !strcmp(path, "..")) {
++		return 1;
++	}
++
++	cl = strdup(path);
++	cl_base = dirname(cl);
++
++	if (!mkdir_p(cl_base, mode, cl) && errno != EEXIST) {
++		return 0;
++	}
++
++	return !((mkdir(path, mode) < 0 && errno != EEXIST));
++}
++
++int open_telem_file(const char *fn, char *mode)
++{
++	struct stat st = {0};
++	int ret = 0;
++	char *cl = NULL;
++	char *dupfn = strdup(fn);
++	char *dirn = dirname(dupfn);
++
++	/* recursively create directories if directory does not exist */
++	if (stat(dirn, &st) < 0 && !mkdir_p(dirn, 0755, cl)) {
++		ret = -1;
++		goto out;
++	}
++
++	telem_fh = fopen(fn, mode);
++	if (telem_fh) {
++		ret = 0;
++		goto out;
++	}
++
++	ret = -1;
++
++out:
++	free(dupfn);
++	free(cl);
++	return ret;
++}
++
++int close_telem_file(void)
++{
++	if (telem_fh) {
++		return fclose(telem_fh);
++	}
++
++	return -1;
++}
++
++#endif /* CLEAR_TELEM */
+diff --git a/telem_records.c b/telem_records.c
+new file mode 100644
+index 0000000..767dd54
+--- /dev/null
++++ b/telem_records.c
+@@ -0,0 +1,174 @@
++#ifdef CLEAR_TELEM
++#define _GNU_SOURCE
++#include <dlfcn.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdio.h>
++#include <sys/stat.h>
++
++#include "mcelog.h"
++
++#define TELEMETRY_LIB "/usr/lib64/libtelemetry.so.3"
++
++void *tm_dlhandle;
++
++struct telem_ref {
++	struct telem_record *record;
++};
++
++int (*tm_create_record)(struct telem_ref **, uint32_t, char *, uint32_t);
++int (*tm_set_payload)(struct telem_ref *, char *);
++int (*tm_send_record)(struct telem_ref *);
++void (*tm_free_record)(struct telem_ref *);
++
++/* attempt to load libtelemetry functions */
++int load_telem_api(void)
++{
++	char *error;
++
++	tm_dlhandle = dlopen(TELEMETRY_LIB, RTLD_NOW);
++	if (!tm_dlhandle) {
++		/* No error, we just don't have telemetry */
++		return 0;
++	}
++
++	tm_create_record = dlsym(tm_dlhandle, "tm_create_record");
++	if ((error = dlerror()) != NULL) {
++		SYSERRprintf("%s", error);
++		dlclose(tm_dlhandle);
++		return 0;
++	}
++
++	tm_set_payload = dlsym(tm_dlhandle, "tm_set_payload");
++	if ((error = dlerror()) != NULL) {
++		SYSERRprintf("%s", error);
++		dlclose(tm_dlhandle);
++		return 0;
++	}
++
++	tm_send_record = dlsym(tm_dlhandle, "tm_send_record");
++	if ((error = dlerror()) != NULL) {
++		SYSERRprintf("%s", error);
++		dlclose(tm_dlhandle);
++		return 0;
++	}
++
++	tm_free_record = dlsym(tm_dlhandle, "tm_free_record");
++	if ((error = dlerror()) != NULL) {
++		SYSERRprintf("%s", error);
++		dlclose(tm_dlhandle);
++		return 0;
++	}
++
++	return 1;
++}
++
++/* wrapper to be used in mcelog.c without including the dlfcn library */
++void unload_telem_api(void)
++{
++	dlclose(tm_dlhandle);
++}
++
++/* send record to telemetry server
++ * only called if load_telem_api is successful
++ */
++int send_record(int severity, char *class, char *payload_fn)
++{
++	struct telem_ref *handle = NULL;
++	struct stat st;
++	FILE   *fp = NULL;
++	int    ret = 0;
++	char   *payload = NULL, *classification = NULL;
++	long   fsize = 0, bytes_read = 0;
++
++	/* open telem file to read */
++	fp = fopen(payload_fn, "r");
++	if (!fp) {
++		SYSERRprintf("Could not open %s for mce telemetry", payload_fn);
++		ret = -1;
++		goto out;
++	}
++
++	/* find the size of the record and allocate memory */
++	if (fstat(fileno(fp), &st) < 0) {
++		SYSERRprintf("fstat error on %s", payload_fn);
++		ret = -1;
++		goto out;
++	}
++
++	if (!st.st_size) {
++		SYSERRprintf("MCE telemetry record %s empty", payload_fn);
++		ret = -1;
++		goto out;
++	}
++
++	fsize = st.st_size;
++
++	payload = (char *) malloc(fsize + 1);
++
++	/* read the payload from the record file */
++	bytes_read = fread(payload, (size_t) fsize, 1, fp);
++
++	if (!bytes_read) {
++		SYSERRprintf("Could not read payload for mce telemetry");
++		ret = -1;
++		goto out;
++	}
++
++	/* make sure payload ends with a null char,
++	 * without this, occasional tm_set_payload errors occur
++	 */
++	payload[fsize - 1] = '\0';
++
++	/* create telemetry record with severity and classification
++	 * this call should fail silently since it will fail if the user is
++	 * opted out - this should not be reported as an error.
++	 * A return greater than 0 indicates this should be a silent failure by
++	 * the calling function.
++	 */
++	asprintf(&classification, "org.clearlinux/mce/%s", class);
++
++	if (tm_create_record(&handle, severity, classification, 1) < 0) {
++		ret = 1;
++		goto out;
++	}
++
++	/* set the payload for the telemetry record from the payload read
++	 * from the temporary telemetry logfile
++	 * if we made it this far, the user was opted in, fail loudly
++	 */
++	if (tm_set_payload(handle, payload) < 0) {
++		SYSERRprintf("Cannot set telemetry payload in mcelog");
++		ret = -1;
++		goto out;
++	}
++
++	/* send the record to the telemetry server set in the user's telemetry
++	 * configuration files
++	 */
++	if (tm_send_record(handle) < 0 ) {
++		SYSERRprintf("Cannot send telemetry record in mcelog");
++		ret = -1;
++		goto out;
++	}
++
++	/* clean up: free the record, free the payload, close the file */
++	ret = 0;
++
++out:
++	if (handle) {
++		tm_free_record(handle);
++	}
++
++	if (payload) {
++		free(payload);
++	}
++
++	if (fp) {
++		fclose(fp);
++	}
++
++	return ret;
++}
++#endif /* CLEAR_TELEM */
+-- 
+2.9.2
+

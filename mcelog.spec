@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 138
-Release  : 14
+Release  : 20
 URL      : https://github.com/andikleen/mcelog/archive/v138.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v138.tar.gz
 Summary  : No detailed summary available
@@ -14,6 +14,7 @@ Requires: mcelog-bin
 Requires: mcelog-config
 Requires: mcelog-doc
 Patch1: memory.patch
+Patch2: 0001-Send-telemetry-record-on-MCE.patch
 
 %description
 mcelog is the user space backend for logging machine check errors
@@ -51,12 +52,9 @@ doc components for the mcelog package.
 %prep
 %setup -q -n mcelog-138
 %patch1 -p1
+%patch2 -p1
 
 %build
-export CFLAGS="$CFLAGS -Os -ffunction-sections "
-export FCFLAGS="$CFLAGS -Os -ffunction-sections "
-export FFLAGS="$CFLAGS -Os -ffunction-sections "
-export CXXFLAGS="$CXXFLAGS -Os -ffunction-sections "
 make V=1  %{?_smp_mflags}
 
 %install
