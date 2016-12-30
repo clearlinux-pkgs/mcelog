@@ -32,14 +32,14 @@ index 4e663bb..8e5ffbc 100644
  etcprefix :=
  MANDIR := ${prefix}/share/man
 @@ -38,7 +39,7 @@ OBJ := p4.o k8.o mcelog.o dmi.o tsc.o core2.o bitfield.o intel.o \
-        client.o cache.o sysfs.o yellow.o page.o rbtree.o 	 \
-        xeon75xx.o sandy-bridge.o ivy-bridge.o haswell.o		 \
+        sandy-bridge.o ivy-bridge.o haswell.o		 	 \
         broadwell_de.o broadwell_epex.o skylake_xeon.o		 \
+        denverton.o						 \
 -       msr.o bus.o unknown.o
 +       msr.o bus.o unknown.o telem_records.o
- DISKDB_OBJ := diskdb.o dimm.o db.o
- CLEAN := mcelog dmi tsc dbquery .depend .depend.X dbquery.o ${DISKDB_OBJ} \
+ CLEAN := mcelog dmi tsc dbquery .depend .depend.X dbquery.o \
  	version.o version.c version.tmp
+ DOC := mce.pdf
 diff --git a/mcelog.c b/mcelog.c
 index 41ba1bc..bddb1db 100644
 --- a/mcelog.c
