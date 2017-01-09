@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 146
-Release  : 21
+Release  : 22
 URL      : https://github.com/andikleen/mcelog/archive/v146.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v146.tar.gz
 Summary  : No detailed summary available
