@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 149
-Release  : 25
+Release  : 26
 URL      : https://github.com/andikleen/mcelog/archive/v149.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v149.tar.gz
 Summary  : No detailed summary available
