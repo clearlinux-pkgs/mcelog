@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 154
-Release  : 33
+Release  : 34
 URL      : https://github.com/andikleen/mcelog/archive/v154.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v154.tar.gz
 Summary  : No detailed summary available
