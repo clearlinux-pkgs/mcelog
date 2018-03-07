@@ -1,3 +1,6 @@
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
 cp mcelog.service %{buildroot}/usr/lib/systemd/system
 ln -s ../mcelog.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
+
+mkdir -p %{buildroot}/usr/share/clr-service-restart
+ln -sf /usr/lib/systemd/system/mcelog.service %{buildroot}/usr/share/clr-service-restart/mcelog.service
