@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 157
-Release  : 36
+Release  : 37
 URL      : https://github.com/andikleen/mcelog/archive/v157.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v157.tar.gz
 Summary  : No detailed summary available
