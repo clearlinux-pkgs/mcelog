@@ -4,25 +4,31 @@
 #
 Name     : mcelog
 Version  : 161
-Release  : 41
+Release  : 42
 URL      : https://github.com/andikleen/mcelog/archive/v161.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v161.tar.gz
 Summary  : No detailed summary available
 Group    : Development/Tools
 License  : GPL-2.0
-Requires: mcelog-bin
-Requires: mcelog-config
-Requires: mcelog-autostart
-Requires: mcelog-data
-Requires: mcelog-license
-Requires: mcelog-man
+Requires: mcelog-autostart = %{version}-%{release}
+Requires: mcelog-bin = %{version}-%{release}
+Requires: mcelog-data = %{version}-%{release}
+Requires: mcelog-license = %{version}-%{release}
+Requires: mcelog-man = %{version}-%{release}
+Requires: mcelog-services = %{version}-%{release}
 Patch1: memory.patch
 Patch2: 0001-Send-telemetry-record-on-MCE.patch
 
 %description
-mcelog used to do released, but now switched to a rolling release
-scheme. That means the git tree is always kept stable and can
-be used directly in production.
+# mcelog
+mcelog is the user space backend for logging machine check errors reported
+by the hardware to the kernel. The kernel does the immediate actions
+(like killing processes etc.) and mcelog decodes the errors and manages
+various other advanced error responses like offlining memory, CPUs or triggering
+events. In addition mcelog also handles corrected errors, by logging and
+accounting them.
+It primarily handles machine checks and thermal events, which are reported
+for errors detected by the CPU.
 
 %package autostart
 Summary: autostart components for the mcelog package.
@@ -36,20 +42,12 @@ autostart components for the mcelog package.
 Summary: bin components for the mcelog package.
 Group: Binaries
 Requires: mcelog-data = %{version}-%{release}
-Requires: mcelog-config = %{version}-%{release}
 Requires: mcelog-license = %{version}-%{release}
 Requires: mcelog-man = %{version}-%{release}
+Requires: mcelog-services = %{version}-%{release}
 
 %description bin
 bin components for the mcelog package.
-
-
-%package config
-Summary: config components for the mcelog package.
-Group: Default
-
-%description config
-config components for the mcelog package.
 
 
 %package data
@@ -76,6 +74,14 @@ Group: Default
 man components for the mcelog package.
 
 
+%package services
+Summary: services components for the mcelog package.
+Group: Systemd services
+
+%description services
+services components for the mcelog package.
+
+
 %prep
 %setup -q -n mcelog-161
 %patch1 -p1
@@ -86,18 +92,22 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C
-export SOURCE_DATE_EPOCH=1537883967
-export CFLAGS="$CFLAGS -Os -fdata-sections -ffunction-sections -fno-semantic-interposition "
-export FCFLAGS="$CFLAGS -Os -fdata-sections -ffunction-sections -fno-semantic-interposition "
-export FFLAGS="$CFLAGS -Os -fdata-sections -ffunction-sections -fno-semantic-interposition "
-export CXXFLAGS="$CXXFLAGS -Os -fdata-sections -ffunction-sections -fno-semantic-interposition "
+export SOURCE_DATE_EPOCH=1546572820
+export AR=gcc-ar
+export RANLIB=gcc-ranlib
+export NM=gcc-nm
+export CFLAGS="$CFLAGS -O3 -Os -fdata-sections -ffat-lto-objects -ffunction-sections -flto=4 -fno-semantic-interposition "
+export FCFLAGS="$CFLAGS -O3 -Os -fdata-sections -ffat-lto-objects -ffunction-sections -flto=4 -fno-semantic-interposition "
+export FFLAGS="$CFLAGS -O3 -Os -fdata-sections -ffat-lto-objects -ffunction-sections -flto=4 -fno-semantic-interposition "
+export CXXFLAGS="$CXXFLAGS -O3 -Os -fdata-sections -ffat-lto-objects -ffunction-sections -flto=4 -fno-semantic-interposition "
 make  %{?_smp_mflags}
 
+
 %install
-export SOURCE_DATE_EPOCH=1537883967
+export SOURCE_DATE_EPOCH=1546572820
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/share/doc/mcelog
-cp LICENSE %{buildroot}/usr/share/doc/mcelog/LICENSE
+mkdir -p %{buildroot}/usr/share/package-licenses/mcelog
+cp LICENSE %{buildroot}/usr/share/package-licenses/mcelog/LICENSE
 %make_install
 ## install_append content
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
@@ -118,21 +128,21 @@ ln -sf /usr/lib/systemd/system/mcelog.service %{buildroot}/usr/share/clr-service
 %defattr(-,root,root,-)
 /usr/bin/mcelog
 
-%files config
-%defattr(-,root,root,-)
-%exclude /usr/lib/systemd/system/multi-user.target.wants/mcelog.service
-/usr/lib/systemd/system/mcelog.service
-
 %files data
 %defattr(-,root,root,-)
 /usr/share/clr-service-restart/mcelog.service
 
 %files license
 %defattr(0644,root,root,0755)
-/usr/share/doc/mcelog/LICENSE
+/usr/share/package-licenses/mcelog/LICENSE
 
 %files man
-%defattr(-,root,root,-)
+%defattr(0644,root,root,0755)
 /usr/share/man/man5/mcelog.conf.5
 /usr/share/man/man5/mcelog.triggers.5
 /usr/share/man/man8/mcelog.8
+
+%files services
+%defattr(-,root,root,-)
+%exclude /usr/lib/systemd/system/multi-user.target.wants/mcelog.service
+/usr/lib/systemd/system/mcelog.service
