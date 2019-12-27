@@ -282,7 +282,7 @@ index 0000000..767dd54
 +
 +#include "mcelog.h"
 +
-+#define TELEMETRY_LIB "/usr/lib64/libtelemetry.so.3"
++#define TELEMETRY_LIB "/usr/lib64/libtelemetry.so.4"
 +
 +void *tm_dlhandle;
 +

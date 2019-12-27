@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 167
-Release  : 46
+Release  : 47
 URL      : https://github.com/andikleen/mcelog/archive/v165/mcelog-167.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v165/mcelog-167.tar.gz
 Summary  : No detailed summary available
@@ -20,15 +20,9 @@ Patch1: memory.patch
 Patch2: 0001-Send-telemetry-record-on-MCE.patch
 
 %description
-# mcelog
-mcelog is the user space backend for logging machine check errors reported
-by the hardware to the kernel. The kernel does the immediate actions
-(like killing processes etc.) and mcelog decodes the errors and manages
-various other advanced error responses like offlining memory, CPUs or triggering
-events. In addition mcelog also handles corrected errors, by logging and
-accounting them.
-It primarily handles machine checks and thermal events, which are reported
-for errors detected by the CPU.
+mcelog used to do released, but now switched to a rolling release
+scheme. That means the git tree is always kept stable and can
+be used directly in production.
 
 %package autostart
 Summary: autostart components for the mcelog package.
@@ -92,7 +86,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1576787429
+export SOURCE_DATE_EPOCH=1577481460
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -105,7 +99,7 @@ make  %{?_smp_mflags}
 
 
 %install
-export SOURCE_DATE_EPOCH=1576787429
+export SOURCE_DATE_EPOCH=1577481460
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/mcelog
 cp %{_builddir}/mcelog-165/LICENSE %{buildroot}/usr/share/package-licenses/mcelog/4cc77b90af91e615a64ae04893fdffa7939db84c
