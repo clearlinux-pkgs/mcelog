@@ -4,7 +4,7 @@
 #
 Name     : mcelog
 Version  : 180
-Release  : 59
+Release  : 60
 URL      : https://github.com/andikleen/mcelog/archive/v180/mcelog-180.tar.gz
 Source0  : https://github.com/andikleen/mcelog/archive/v180/mcelog-180.tar.gz
 Summary  : No detailed summary available
@@ -17,7 +17,6 @@ Requires: mcelog-license = %{version}-%{release}
 Requires: mcelog-man = %{version}-%{release}
 Requires: mcelog-services = %{version}-%{release}
 Patch1: memory.patch
-Patch2: 0001-Send-telemetry-record-on-MCE.patch
 
 %description
 mcelog used to do released, but now switched to a rolling release
@@ -79,14 +78,13 @@ services components for the mcelog package.
 %setup -q -n mcelog-180
 cd %{_builddir}/mcelog-180
 %patch1 -p1
-%patch2 -p1
 
 %build
 export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1639416872
+export SOURCE_DATE_EPOCH=1641337309
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -99,7 +97,7 @@ make  %{?_smp_mflags}
 
 
 %install
-export SOURCE_DATE_EPOCH=1639416872
+export SOURCE_DATE_EPOCH=1641337309
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/mcelog
 cp %{_builddir}/mcelog-180/LICENSE %{buildroot}/usr/share/package-licenses/mcelog/4cc77b90af91e615a64ae04893fdffa7939db84c
