@@ -1,5 +1,5 @@
 PKG_NAME := mcelog
-URL = https://github.com/andikleen/mcelog/archive/v187/mcelog-187.tar.gz
+URL = https://github.com/andikleen/mcelog/archive/v188/mcelog-188.tar.gz
 ARCHIVES = 
 
 include ../common/Makefile.common
