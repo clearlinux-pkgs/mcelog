@@ -4,10 +4,10 @@
 # Using build pattern: make
 #
 Name     : mcelog
-Version  : 193
-Release  : 72
-URL      : https://github.com/andikleen/mcelog/archive/v193/mcelog-193.tar.gz
-Source0  : https://github.com/andikleen/mcelog/archive/v193/mcelog-193.tar.gz
+Version  : 194
+Release  : 73
+URL      : https://github.com/andikleen/mcelog/archive/v194/mcelog-194.tar.gz
+Source0  : https://github.com/andikleen/mcelog/archive/v194/mcelog-194.tar.gz
 Summary  : No detailed summary available
 Group    : Development/Tools
 License  : GPL-2.0
@@ -79,8 +79,8 @@ services components for the mcelog package.
 
 
 %prep
-%setup -q -n mcelog-193
-cd %{_builddir}/mcelog-193
+%setup -q -n mcelog-194
+cd %{_builddir}/mcelog-194
 %patch1 -p1
 
 %build
@@ -88,7 +88,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1680618598
+export SOURCE_DATE_EPOCH=1680792066
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -101,7 +101,7 @@ make  %{?_smp_mflags}
 
 
 %install
-export SOURCE_DATE_EPOCH=1680618598
+export SOURCE_DATE_EPOCH=1680792066
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/mcelog
 cp %{_builddir}/mcelog-%{version}/LICENSE %{buildroot}/usr/share/package-licenses/mcelog/4cc77b90af91e615a64ae04893fdffa7939db84c || :
