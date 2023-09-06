@@ -4,10 +4,10 @@
 # Using build pattern: make
 #
 Name     : mcelog
-Version  : 194
-Release  : 73
-URL      : https://github.com/andikleen/mcelog/archive/v194/mcelog-194.tar.gz
-Source0  : https://github.com/andikleen/mcelog/archive/v194/mcelog-194.tar.gz
+Version  : 195
+Release  : 74
+URL      : https://github.com/andikleen/mcelog/archive/v195/mcelog-195.tar.gz
+Source0  : https://github.com/andikleen/mcelog/archive/v195/mcelog-195.tar.gz
 Summary  : No detailed summary available
 Group    : Development/Tools
 License  : GPL-2.0
@@ -73,38 +73,53 @@ man components for the mcelog package.
 %package services
 Summary: services components for the mcelog package.
 Group: Systemd services
+Requires: systemd
 
 %description services
 services components for the mcelog package.
 
 
 %prep
-%setup -q -n mcelog-194
-cd %{_builddir}/mcelog-194
-%patch1 -p1
+%setup -q -n mcelog-195
+cd %{_builddir}/mcelog-195
+%patch -P 1 -p1
+pushd ..
+cp -a mcelog-195 buildavx2
+popd
 
 %build
 export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1680792066
+export SOURCE_DATE_EPOCH=1694038245
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
 export NM=gcc-nm
-export CFLAGS="$CFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz "
-export FCFLAGS="$FFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz "
-export FFLAGS="$FFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz "
-export CXXFLAGS="$CXXFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz "
+export CFLAGS="$CFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz=zstd "
+export FCFLAGS="$FFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz=zstd "
+export FFLAGS="$FFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz=zstd "
+export CXXFLAGS="$CXXFLAGS -O3 -Os -fdata-sections -fdebug-types-section -femit-struct-debug-baseonly -ffat-lto-objects -ffunction-sections -flto=auto -fno-semantic-interposition -g1 -gno-column-info -gno-variable-location-views -gz=zstd "
 make  %{?_smp_mflags}
 
+pushd ../buildavx2
+export CFLAGS="$CFLAGS -m64 -march=x86-64-v3 -Wl,-z,x86-64-v3"
+export CXXFLAGS="$CXXFLAGS -m64 -march=x86-64-v3 -Wl,-z,x86-64-v3"
+export FFLAGS="$FFLAGS -m64 -march=x86-64-v3 -Wl,-z,x86-64-v3"
+export FCFLAGS="$FCFLAGS -m64 -march=x86-64-v3"
+export LDFLAGS="$LDFLAGS -m64 -march=x86-64-v3"
+make  %{?_smp_mflags}
+popd
 
 %install
-export SOURCE_DATE_EPOCH=1680792066
+export SOURCE_DATE_EPOCH=1694038245
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/mcelog
 cp %{_builddir}/mcelog-%{version}/LICENSE %{buildroot}/usr/share/package-licenses/mcelog/4cc77b90af91e615a64ae04893fdffa7939db84c || :
+pushd ../buildavx2/
+%make_install_v3
+popd
 %make_install
 ## install_append content
 mkdir -p %{buildroot}/usr/lib/systemd/system/multi-user.target.wants
@@ -114,6 +129,7 @@ ln -s ../mcelog.service %{buildroot}/usr/lib/systemd/system/multi-user.target.wa
 mkdir -p %{buildroot}/usr/share/clr-service-restart
 ln -sf /usr/lib/systemd/system/mcelog.service %{buildroot}/usr/share/clr-service-restart/mcelog.service
 ## install_append end
+/usr/bin/elf-move.py avx2 %{buildroot}-v3 %{buildroot} %{buildroot}/usr/share/clear/filemap/filemap-%{name}
 
 %files
 %defattr(-,root,root,-)
@@ -124,6 +140,7 @@ ln -sf /usr/lib/systemd/system/mcelog.service %{buildroot}/usr/share/clr-service
 
 %files bin
 %defattr(-,root,root,-)
+/V3/usr/bin/mcelog
 /usr/bin/mcelog
 
 %files data
