@@ -1,5 +1,5 @@
-/builddir/build/BUILDROOT/mcelog-198-77.x86_64/etc/:
-/builddir/build/BUILDROOT/mcelog-198-77.x86_64/etc/mcelog:
+/etc/:
+/etc/mcelog:
 bus-error-trigger
 cache-error-trigger
 dimm-error-trigger
