@@ -6,10 +6,10 @@
 # autospec commit: 9594167
 #
 Name     : mcelog
-Version  : 205
-Release  : 83
-URL      : https://github.com/andikleen/mcelog/archive/v205/mcelog-205.tar.gz
-Source0  : https://github.com/andikleen/mcelog/archive/v205/mcelog-205.tar.gz
+Version  : 206
+Release  : 84
+URL      : https://github.com/andikleen/mcelog/archive/v206/mcelog-206.tar.gz
+Source0  : https://github.com/andikleen/mcelog/archive/v206/mcelog-206.tar.gz
 Summary  : No detailed summary available
 Group    : Development/Tools
 License  : GPL-2.0
@@ -82,11 +82,11 @@ services components for the mcelog package.
 
 
 %prep
-%setup -q -n mcelog-205
-cd %{_builddir}/mcelog-205
+%setup -q -n mcelog-206
+cd %{_builddir}/mcelog-206
 %patch -P 1 -p1
 pushd ..
-cp -a mcelog-205 buildavx2
+cp -a mcelog-206 buildavx2
 popd
 
 %build
@@ -94,7 +94,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1746027090
+export SOURCE_DATE_EPOCH=1746035512
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -137,7 +137,7 @@ FFLAGS="$CLEAR_INTERMEDIATE_FFLAGS"
 FCFLAGS="$CLEAR_INTERMEDIATE_FCFLAGS"
 ASFLAGS="$CLEAR_INTERMEDIATE_ASFLAGS"
 LDFLAGS="$CLEAR_INTERMEDIATE_LDFLAGS"
-export SOURCE_DATE_EPOCH=1746027090
+export SOURCE_DATE_EPOCH=1746035512
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/mcelog
 cp %{_builddir}/mcelog-%{version}/LICENSE %{buildroot}/usr/share/package-licenses/mcelog/4cc77b90af91e615a64ae04893fdffa7939db84c || :
